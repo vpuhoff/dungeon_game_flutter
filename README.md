@@ -1,16 +1,152 @@
-# dungeon_game
+# Dungeon Game
 
-A new Flutter project.
+**Dungeon Game** — это простая игра-roguelike, созданная с использованием Flutter. В игре вы управляете персонажем, который перемещается по лабиринту, сражается с врагами, собирает сердца для восстановления здоровья и сундуки с золотом. Ваша цель — найти выход из подземелий, переходя на новые уровни с возрастающей сложностью.
 
-## Getting Started
+## Содержание
 
-This project is a starting point for a Flutter application.
+- [Правила игры](#правила-игры)
+- [Как играть](#как-играть)
+- [Структура проекта](#структура-проекта)
+- [Сборка релизов](#сборка-релизов)
+  - [Android](#android)
+  - [iOS](#ios)
+  - [Windows](#windows)
+  - [macOS](#macos)
+  - [Linux](#linux)
+- [Зависимости](#зависимости)
+- [Лицензия](#лицензия)
 
-A few resources to get you started if this is your first Flutter project:
+## Правила игры
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Цель игры:**  
+  Пройти как можно больше уровней, находя выходы из лабиринта и собирая золото.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Характеристики игрока:**
+  - **HP (здоровье):** Начальное значение — 100. При столкновении с врагом здоровье уменьшается на величину урона врага.
+  - **Золото:** За победу над врагами вы получаете золото, равное их урону.
+  - **Шаги:** Количество сделанных шагов влияет на итоговый рейтинг.
+
+- **Препятствия и бонусы:**
+  - **Враги:** Если враг наносит урон, превышающий оставшееся здоровье, игрок получает 0 HP, что приводит к завершению игры.
+  - **Сердца:** При наступлении на клетку с сердцем здоровье игрока полностью восстанавливается.
+  - **Сундуки:** При сборе сундука вы получаете дополнительное золото.
+  - **Выход:** Достижение клетки с выходом переводит вас на следующий уровень, где генерируется новый лабиринт.
+
+- **Рейтинг:**  
+  Итоговый рейтинг рассчитывается на основе уровня, собранного золота и количества шагов.
+
+## Как играть
+
+- **Управление:**
+  - **Клавиатура:** Используйте стрелки для перемещения.
+  - **Он-скрин джойстик:** Для удобства также реализован набор кнопок (стрелки) под картой, которыми можно управлять персонажем.
+
+- **Геймплей:**
+  - Избегайте столкновений с врагами, если это может привести к потере здоровья, однако иногда риск неизбежен.
+  - Собирайте сердца для восстановления здоровья и сундуки для увеличения золота.
+  - Найдите выход, чтобы перейти на следующий уровень с новым лабиринтом.
+
+- **Конец игры:**  
+  Игра заканчивается, если здоровье игрока достигает 0. После этого выводятся статистика и итоговый рейтинг.
+
+## Структура проекта
+
+```
+/dungeon_game
+├── android            # Android-платформа
+├── ios                # iOS-платформа
+├── lib
+│   ├── models
+│   │   └── game_state.dart  # Логика игры
+│   └── screens
+│       └── game_screen.dart # Основной экран игры
+├── pubspec.yaml       # Зависимости и настройки проекта
+└── README.md          # Этот файл
+```
+
+## Сборка релизов
+
+### Предварительные требования
+
+- [Flutter SDK](https://flutter.dev/docs/get-started/install)
+- Для Android: установлен Android SDK и настроенный Android Studio
+- Для iOS: Xcode (только на macOS)
+- Для сборки под Windows, macOS или Linux: включена соответствующая поддержка в Flutter  
+  (например, `flutter config --enable-windows-desktop`, `flutter config --enable-macos-desktop` или `flutter config --enable-linux-desktop`)
+
+### Android
+
+1. Откройте терминал в корневой папке проекта.
+2. Выполните команду:
+   ```bash
+   flutter build apk --release
+   ```
+3. Результирующий APK-файл находится по адресу:
+   ```
+   build/app/outputs/apk/release/app-release.apk
+   ```
+
+### iOS
+
+1. На macOS откройте терминал в корневой папке проекта.
+2. Выполните:
+   ```bash
+   flutter build ios --release
+   ```
+3. После сборки откройте `ios/Runner.xcworkspace` в Xcode для архивирования и экспорта IPA для публикации.
+
+### Windows
+
+1. Убедитесь, что включена поддержка Windows:
+   ```bash
+   flutter config --enable-windows-desktop
+   ```
+2. Выполните команду:
+   ```bash
+   flutter build windows --release
+   ```
+3. Исполняемый файл Windows будет расположен по адресу:
+   ```
+   build/windows/runner/Release/
+   ```
+
+### macOS
+
+1. Включите поддержку macOS:
+   ```bash
+   flutter config --enable-macos-desktop
+   ```
+2. Выполните:
+   ```bash
+   flutter build macos --release
+   ```
+3. Результаты сборки находятся в:
+   ```
+   build/macos/Build/Products/Release/
+   ```
+
+### Linux
+
+1. Включите поддержку Linux:
+   ```bash
+   flutter config --enable-linux-desktop
+   ```
+2. Выполните:
+   ```bash
+   flutter build linux --release
+   ```
+3. Готовая сборка будет находиться в:
+   ```
+   build/linux/x64/release/bundle/
+   ```
+
+## Зависимости
+
+- [Flutter](https://flutter.dev)
+- [Dart](https://dart.dev)
+
+Все дополнительные зависимости указываются в файле [pubspec.yaml](pubspec.yaml).
+
+## Лицензия
+
+Этот проект распространяется под лицензией MIT. Ознакомьтесь с файлом [LICENSE](LICENSE) для подробностей.
