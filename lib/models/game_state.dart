@@ -2,6 +2,22 @@
 
 import 'dart:math';
 
+class Achievement {
+  final String id;
+  final String title;
+  final String description;
+  final int rewardGold;
+  bool unlocked;
+
+  Achievement({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.rewardGold,
+    this.unlocked = false,
+  });
+}
+
 class GameState {
   int level = 1;
   int hp = 100;
@@ -10,7 +26,13 @@ class GameState {
   int healingPotions = 0;
   int gold = 0;
   int totalSteps = 0;
-  int hpUpgradesPurchased = 0; // Счетчик покупок улучшения здоровья
+  int hpUpgradesPurchased = 0;
+  
+  // New fields for experience system
+  int playerLevel = 1;
+  int experience = 0;
+  int experienceToNextLevel = 100;
+  List<Achievement> achievements = [];
   Position playerPosition = const Position(1, 1);
   Position exit = const Position(13, 13);  // boardSize - 2
   List<Position> walls = [];
@@ -19,6 +41,88 @@ class GameState {
   List<Chest> chests = [];
 
   static const int boardSize = 15;
+
+  GameState() {
+    _initializeAchievements();
+  }
+
+  void _initializeAchievements() {
+    achievements = [
+      Achievement(
+        id: 'first_blood',
+        title: 'Первая кровь',
+        description: 'Победите первого врага',
+        rewardGold: 50,
+      ),
+      Achievement(
+        id: 'gold_hunter',
+        title: 'Золотоискатель',
+        description: 'Соберите 1000 золота',
+        rewardGold: 200,
+      ),
+      Achievement(
+        id: 'survivor',
+        title: 'Выживший',
+        description: 'Достигните 10 уровня подземелья',
+        rewardGold: 500,
+      ),
+      Achievement(
+        id: 'tank',
+        title: 'Танк',
+        description: 'Достигните 200 максимального здоровья',
+        rewardGold: 300,
+      ),
+    ];
+  }
+
+  void addExperience(int amount) {
+    experience += amount;
+    while (experience >= experienceToNextLevel) {
+      experience -= experienceToNextLevel;
+      playerLevel++;
+      experienceToNextLevel = (experienceToNextLevel * 1.5).round();
+      // Бонус за уровень
+      maxHp += 10;
+      hp = maxHp;
+    }
+  }
+
+  void checkAchievements() {
+    for (var achievement in achievements) {
+      if (!achievement.unlocked) {
+        switch (achievement.id) {
+          case 'first_blood':
+            if (enemies.any((e) => e.defeated)) {
+              unlockAchievement(achievement);
+            }
+            break;
+          case 'gold_hunter':
+            if (gold >= 1000) {
+              unlockAchievement(achievement);
+            }
+            break;
+          case 'survivor':
+            if (level >= 10) {
+              unlockAchievement(achievement);
+            }
+            break;
+          case 'tank':
+            if (maxHp >= 200) {
+              unlockAchievement(achievement);
+            }
+            break;
+        }
+      }
+    }
+  }
+
+  void unlockAchievement(Achievement achievement) {
+    if (!achievement.unlocked) {
+      achievement.unlocked = true;
+      gold += achievement.rewardGold;
+      addExperience(50); // Опыт за достижение
+    }
+  }
 
   bool buyMaxHpUpgrade(int baseCost) {
     // Увеличиваем стоимость на 50 золота за каждое предыдущее улучшение
@@ -83,7 +187,13 @@ class GameState {
     healingPotions = 0;
     gold = 0;
     totalSteps = 0;
-    hpUpgradesPurchased = 0; // Сбрасываем счетчик улучшений здоровья
+    hpUpgradesPurchased = 0;
+    // Reset experience system
+    playerLevel = 1;
+    experience = 0;
+    experienceToNextLevel = 100;
+    // Reset achievements
+    _initializeAchievements();
     playerPosition = const Position(1, 1);
     exit = const Position(boardSize - 2, boardSize - 2);
     walls.clear();
@@ -140,17 +250,17 @@ class GameState {
       takeDamage(enemy.damage);
       gold += enemy.damage;
       enemy.defeated = true;
+      addExperience(enemy.damage); // Опыт за победу над врагом
+      checkAchievements();
     }
 
     // Проверка сбора сердца
     final heartIndex = hearts.indexOf(newPosition);
     if (heartIndex != -1) {
       if (hp >= maxHp) {
-      // Если здоровье полное, получаем зелье
-      healingPotions++;
+        healingPotions++;
       } else {
-      // Иначе восстанавливаем здоровье
-      hp = maxHp;
+        hp = maxHp;
       }
       hearts.removeAt(heartIndex);
     }
@@ -172,8 +282,8 @@ class GameState {
     playerPosition = newPosition;
 
     return true;
-
   }
+
 
   // Генерация лабиринта
   void generateMaze() {

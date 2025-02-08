@@ -12,17 +12,50 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   late final GameState gameState;
   final FocusNode _focusNode = FocusNode();
+  bool _isDialogOpen = false;
+
+  void _requestFocus() {
+    if (!_isDialogOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isDialogOpen) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
+  }
+
+  @override 
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _requestFocus();
+  }
+
+  // Добавляем контроллер для управления уведомлениями
+  void _showNotification(String message) {
+    // Очищаем предыдущие уведомления
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height - 100,
+          left: 20,
+          right: 20,
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     gameState = GameState();
     gameState.generateMaze();
-    // Запрос фокуса для получения событий клавиатуры
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
+    _requestFocus();
   }
+
 
   @override
   void dispose() {
@@ -30,7 +63,9 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
+
   void _showShop() {
+    _isDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -48,12 +83,12 @@ class _GameScreenState extends State<GameScreen> {
                 trailing: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      if (gameState.buyMaxHpUpgrade(100)) {
-                        setDialogState(() {}); // Обновляем состояние диалога
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Max HP increased!')),
-                        );
-                      }
+                        if (gameState.buyMaxHpUpgrade(100)) {
+                        setDialogState(() {});
+                        setState(() {});
+                        _showNotification('Max HP increased!');
+                        }
+
                     });
                   },
                   child: const Text('Buy'),
@@ -97,14 +132,16 @@ class _GameScreenState extends State<GameScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
+                onPressed: () {
                 Navigator.of(context).pop();
                 setState(() {
-                  gameState.level++; // Увеличиваем уровень
-                  gameState.generateMaze(); // Генерируем новый уровень
-                  gameState.playerPosition = const Position(1, 1); // Возвращаем игрока на старт
+                    gameState.level++;
+                    gameState.generateMaze();
+                    gameState.playerPosition = const Position(1, 1);
+                    _isDialogOpen = false;
+                    _requestFocus();
                 });
-              },
+                },
               child: const Text('Continue to next level'),
             ),
           ],
@@ -114,16 +151,15 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _handleMove(Position newPosition) {
+    if (_isDialogOpen) return;
+    
     if (gameState.movePlayer(newPosition)) {
       setState(() {});
       
       if (gameState.hp <= 0) {
         _showGameOver();
       } else if (gameState.playerPosition == gameState.exit) {
-        // Показываем магазин при достижении выхода
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showShop();
-        });
+        _showShop();
       }
     }
   }
@@ -131,7 +167,45 @@ class _GameScreenState extends State<GameScreen> {
 
 
 
+
+  void _showAchievements() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Достижения'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Уровень подземелья'),
+              subtitle: Text('Текущий уровень: ${gameState.level}'),
+            ),
+            ListTile(
+              title: const Text('Собрано золота'),
+              subtitle: Text('${gameState.gold}'),
+            ),
+            ListTile(
+              title: const Text('Сделано шагов'),
+              subtitle: Text('${gameState.totalSteps}'),
+            ),
+            ListTile(
+              title: const Text('Рейтинг'),
+              subtitle: Text('${gameState.calculateRating()}'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Закрыть'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showGameOver() {
+    _isDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -150,6 +224,8 @@ class _GameScreenState extends State<GameScreen> {
               setState(() {
                 gameState.reset();
                 gameState.generateMaze();
+                _isDialogOpen = false;
+                _requestFocus();
               });
             },
             child: const Text('Play Again'),
@@ -319,13 +395,34 @@ class _GameScreenState extends State<GameScreen> {
                   color: Colors.purple,
                   fontWeight: FontWeight.bold,
                 ),
+                ),
+              ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+              children: [
+                const Text('Level: '),
+                Text('${gameState.playerLevel}'),
+                const SizedBox(width: 16),
+                Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                  value: gameState.experience / gameState.experienceToNextLevel,
+                  backgroundColor: Colors.grey[300],
+                  color: Colors.purple,
+                  minHeight: 10,
+                  ),
+                ),
+                ),
+                const SizedBox(width: 8),
+                Text('${gameState.experience}/${gameState.experienceToNextLevel} XP'),
+              ],
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
+            ),
+          );
+          }
 
   Color _getHpColor(int hp) {
     if (hp > 60) return Colors.green;
@@ -398,25 +495,36 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+        appBar: AppBar(
         title: Text('Floor ${gameState.level}'),
-      ),
+        actions: [
+          IconButton(
+          icon: const Icon(Icons.emoji_events),
+          onPressed: _showAchievements,
+          tooltip: 'Достижения',
+          ),
+        ],
+        ),
       body: RawKeyboardListener(
         focusNode: _focusNode,
         autofocus: true,
         onKey: (RawKeyEvent event) {
-          if (event is RawKeyDownEvent) {
-            // Обработка нажатий клавиш-стрелок
+            if (event is RawKeyDownEvent) {
+            Position? newPosition;
             if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              _handleMove(gameState.playerPosition.translate(dx: -1));
+              newPosition = gameState.playerPosition.translate(dx: -1);
             } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              _handleMove(gameState.playerPosition.translate(dx: 1));
+              newPosition = gameState.playerPosition.translate(dx: 1);
             } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-              _handleMove(gameState.playerPosition.translate(dy: -1));
+              newPosition = gameState.playerPosition.translate(dy: -1);
             } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              _handleMove(gameState.playerPosition.translate(dy: 1));
+              newPosition = gameState.playerPosition.translate(dy: 1);
             }
-          }
+            
+            if (newPosition != null) {
+              _handleMove(newPosition);
+            }
+            }
         },
         child: Column(
           children: [
