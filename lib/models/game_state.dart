@@ -28,10 +28,14 @@ class GameState {
   int totalSteps = 0;
   int hpUpgradesPurchased = 0;
   
-  // New fields for experience system
+  // Fields for level system
   int playerLevel = 1;
   int experience = 0;
   int experienceToNextLevel = 100;
+  
+  // Fields for dash ability
+  int dashCooldown = 0;
+  static const int maxDashCooldown = 5; // Cooldown in turns
   List<Achievement> achievements = [];
   Position playerPosition = const Position(1, 1);
   Position exit = const Position(13, 13);  // boardSize - 2
@@ -75,16 +79,41 @@ class GameState {
     ];
   }
 
-  void addExperience(int amount) {
+  void gainExperience(int amount) {
     experience += amount;
     while (experience >= experienceToNextLevel) {
       experience -= experienceToNextLevel;
       playerLevel++;
       experienceToNextLevel = (experienceToNextLevel * 1.5).round();
-      // Бонус за уровень
+      
+      // Level up bonuses
       maxHp += 10;
       hp = maxHp;
     }
+  }
+
+  // Method for dash ability
+  bool dash(Position direction) {
+    if (dashCooldown > 0) {
+      return false;
+    }
+
+    // Dash 2 cells in the specified direction
+    Position dashEnd = Position(
+      playerPosition.x + direction.x * 2,
+      playerPosition.y + direction.y * 2
+    );
+
+    // Check if dash is possible
+    if (dashEnd.x < 0 || dashEnd.x >= boardSize || 
+        dashEnd.y < 0 || dashEnd.y >= boardSize ||
+        walls.contains(dashEnd)) {
+      return false;
+    }
+
+    playerPosition = dashEnd;
+    dashCooldown = maxDashCooldown;
+    return true;
   }
 
   void checkAchievements() {
@@ -120,7 +149,7 @@ class GameState {
     if (!achievement.unlocked) {
       achievement.unlocked = true;
       gold += achievement.rewardGold;
-      addExperience(50); // Опыт за достижение
+      gainExperience(50); // Опыт за достижение
     }
   }
 
@@ -188,10 +217,11 @@ class GameState {
     gold = 0;
     totalSteps = 0;
     hpUpgradesPurchased = 0;
-    // Reset experience system
+    // Reset experience system and abilities
     playerLevel = 1;
     experience = 0;
     experienceToNextLevel = 100;
+    dashCooldown = 0;
     // Reset achievements
     _initializeAchievements();
     playerPosition = const Position(1, 1);
@@ -250,7 +280,7 @@ class GameState {
       takeDamage(enemy.damage);
       gold += enemy.damage;
       enemy.defeated = true;
-      addExperience(enemy.damage); // Опыт за победу над врагом
+        gainExperience(enemy.damage * 2); // Experience for defeating enemy
       checkAchievements();
     }
 
@@ -280,6 +310,11 @@ class GameState {
 
     // Перемещение игрока
     playerPosition = newPosition;
+
+    // Reduce dash cooldown
+    if (dashCooldown > 0) {
+      dashCooldown--;
+    }
 
     return true;
   }

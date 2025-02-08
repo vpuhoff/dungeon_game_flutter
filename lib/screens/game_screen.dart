@@ -153,6 +153,9 @@ class _GameScreenState extends State<GameScreen> {
   void _handleMove(Position newPosition) {
     if (_isDialogOpen) return;
     
+    // Even if move is invalid, request focus
+    _requestFocus();
+    
     if (gameState.movePlayer(newPosition)) {
       setState(() {});
       
@@ -354,6 +357,28 @@ class _GameScreenState extends State<GameScreen> {
       ),
       child: Column(
         children: [
+          // Level and XP bar
+          Row(
+            children: [
+              Text('Level ${gameState.playerLevel}'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: gameState.experience / gameState.experienceToNextLevel,
+                    backgroundColor: Colors.grey[300],
+                    color: Colors.purple,
+                    minHeight: 8,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text('${gameState.experience}/${gameState.experienceToNextLevel} XP'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // HP bar
           Row(
             children: [
               const Text('HP: '),
@@ -395,34 +420,14 @@ class _GameScreenState extends State<GameScreen> {
                   color: Colors.purple,
                   fontWeight: FontWeight.bold,
                 ),
-                ),
-              ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-              children: [
-                const Text('Level: '),
-                Text('${gameState.playerLevel}'),
-                const SizedBox(width: 16),
-                Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                  value: gameState.experience / gameState.experienceToNextLevel,
-                  backgroundColor: Colors.grey[300],
-                  color: Colors.purple,
-                  minHeight: 10,
-                  ),
-                ),
-                ),
-                const SizedBox(width: 8),
-                Text('${gameState.experience}/${gameState.experienceToNextLevel} XP'),
-              ],
               ),
             ],
-            ),
-          );
-          }
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Color _getHpColor(int hp) {
     if (hp > 60) return Colors.green;
@@ -432,19 +437,24 @@ class _GameScreenState extends State<GameScreen> {
 
   /// Виджет джойстика для управления игроком.
   Widget buildJoystick() {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Кнопка "Вверх"
-          IconButton(
-            icon: const Icon(Icons.arrow_drop_up, size: 40),
-            onPressed: () {
-              _handleMove(gameState.playerPosition.translate(dy: -1));
-            },
+          // Up button row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_drop_up, size: 40),
+                onPressed: () {
+                  _handleMove(gameState.playerPosition.translate(dy: -1));
+                },
+              ),
+            ],
           ),
-          // Строка с кнопками "Влево", "Зелье" и "Вправо"
+          // Middle row with left, dash/potion, right
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -454,24 +464,39 @@ class _GameScreenState extends State<GameScreen> {
                   _handleMove(gameState.playerPosition.translate(dx: -1));
                 },
               ),
-              if (gameState.healingPotions > 0)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        gameState.useHealingPotion();
-                      });
-                    },
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🧪', style: TextStyle(fontSize: 20)),
-                        Text('${gameState.healingPotions}'),
-                      ],
+              const SizedBox(width: 16),
+              // Center buttons
+              Column(
+                children: [
+                  if (gameState.dashCooldown == 0)
+                    IconButton(
+                      icon: const Icon(Icons.speed),
+                      onPressed: () {
+                        setState(() {
+                          // Use the last movement direction for dash
+                          gameState.dash(const Position(0, -1));
+                        });
+                      },
+                      tooltip: 'Dash',
                     ),
-                  ),
-                ),
+                  if (gameState.healingPotions > 0)
+                    IconButton(
+                      icon: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🧪', style: TextStyle(fontSize: 20)),
+                          Text('${gameState.healingPotions}'),
+                        ],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          gameState.useHealingPotion();
+                        });
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(width: 16),
               IconButton(
                 icon: const Icon(Icons.arrow_right, size: 40),
                 onPressed: () {
@@ -480,17 +505,28 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ],
           ),
-          // Кнопка "Вниз"
-          IconButton(
-            icon: const Icon(Icons.arrow_drop_down, size: 40),
-            onPressed: () {
-              _handleMove(gameState.playerPosition.translate(dy: 1));
-            },
+          // Down button row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_drop_down, size: 40),
+                onPressed: () {
+                  _handleMove(gameState.playerPosition.translate(dy: 1));
+                },
+              ),
+            ],
           ),
+          if (gameState.dashCooldown > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text('Dash cooldown: ${gameState.dashCooldown}'),
+            ),
         ],
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -505,32 +541,33 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ],
         ),
-      body: RawKeyboardListener(
-        focusNode: _focusNode,
+        body: Focus(
         autofocus: true,
-        onKey: (RawKeyEvent event) {
-            if (event is RawKeyDownEvent) {
-            Position? newPosition;
-            if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              newPosition = gameState.playerPosition.translate(dx: -1);
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              newPosition = gameState.playerPosition.translate(dx: 1);
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-              newPosition = gameState.playerPosition.translate(dy: -1);
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              newPosition = gameState.playerPosition.translate(dy: 1);
-            }
-            
-            if (newPosition != null) {
-              _handleMove(newPosition);
-            }
-            }
+        onKeyEvent: (FocusNode node, KeyEvent event) {
+          if (event is KeyDownEvent) {
+          Position? newPosition;
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            newPosition = gameState.playerPosition.translate(dx: -1);
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            newPosition = gameState.playerPosition.translate(dx: 1);
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            newPosition = gameState.playerPosition.translate(dy: -1);
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            newPosition = gameState.playerPosition.translate(dy: 1);
+          }
+          
+          if (newPosition != null) {
+            _handleMove(newPosition);
+            return KeyEventResult.handled;
+          }
+          }
+          return KeyEventResult.ignored;
         },
         child: Column(
           children: [
             Expanded(
-              child: GestureDetector(
-                // При необходимости можно оставить обработчики свайпов
+                child: GestureDetector(
+                onTapDown: (_) => _requestFocus(), // Add this line to handle taps
                 child: GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
