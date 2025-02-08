@@ -305,12 +305,12 @@ class _GameScreenState extends State<GameScreen> {
         ),
         child: Center(
           child: Text(
-            '${enemy.damage}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+          '${enemy.damage}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
           ),
         ),
       );
@@ -435,8 +435,74 @@ class _GameScreenState extends State<GameScreen> {
     return Colors.red;
   }
 
+  /// Виджет с кнопками действий (способности и зелья)
+  Widget buildActionButtons() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          if (gameState.dashCooldown == 0)
+            SizedBox(
+              width: 60,
+              height: 60,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  setState(() {
+                    gameState.dash(const Position(0, -1));
+                  });
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                  Icon(Icons.speed, size: 30),
+                  Text('Dash', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
+          if (gameState.healingPotions > 0)
+            SizedBox(
+              width: 60,
+              height: 60,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  setState(() {
+                    gameState.useHealingPotion();
+                  });
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('🧪', style: TextStyle(fontSize: 24)),
+                    // ignore: prefer_const_constructors
+                    Text('${gameState.healingPotions}', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   /// Виджет джойстика для управления игроком.
   Widget buildJoystick() {
+    const double buttonSize = 64.0;
+    const double iconSize = 48.0;
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -446,74 +512,58 @@ class _GameScreenState extends State<GameScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_drop_up, size: 40),
-                onPressed: () {
-                  _handleMove(gameState.playerPosition.translate(dy: -1));
-                },
+              SizedBox(
+                width: buttonSize,
+                height: buttonSize,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_drop_up, size: iconSize),
+                  onPressed: () {
+                    _handleMove(gameState.playerPosition.translate(dy: -1));
+                  },
+                ),
               ),
             ],
           ),
-          // Middle row with left, dash/potion, right
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_left, size: 40),
-                onPressed: () {
+          // Middle row with left and right
+              Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                width: buttonSize,
+                height: buttonSize,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_left, size: iconSize),
+                  onPressed: () {
                   _handleMove(gameState.playerPosition.translate(dx: -1));
-                },
-              ),
-              const SizedBox(width: 16),
-              // Center buttons
-              Column(
-                children: [
-                  if (gameState.dashCooldown == 0)
-                    IconButton(
-                      icon: const Icon(Icons.speed),
-                      onPressed: () {
-                        setState(() {
-                          // Use the last movement direction for dash
-                          gameState.dash(const Position(0, -1));
-                        });
-                      },
-                      tooltip: 'Dash',
-                    ),
-                  if (gameState.healingPotions > 0)
-                    IconButton(
-                      icon: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🧪', style: TextStyle(fontSize: 20)),
-                          Text('${gameState.healingPotions}'),
-                        ],
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          gameState.useHealingPotion();
-                        });
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              IconButton(
-                icon: const Icon(Icons.arrow_right, size: 40),
-                onPressed: () {
+                  },
+                ),
+                ),
+                const SizedBox(width: buttonSize), // Space for middle
+                SizedBox(
+                width: buttonSize,
+                height: buttonSize,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_right, size: iconSize),
+                  onPressed: () {
                   _handleMove(gameState.playerPosition.translate(dx: 1));
-                },
+                  },
+                ),
+                ),
+              ],
               ),
-            ],
-          ),
           // Down button row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_drop_down, size: 40),
-                onPressed: () {
-                  _handleMove(gameState.playerPosition.translate(dy: 1));
-                },
+              SizedBox(
+                width: buttonSize,
+                height: buttonSize,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_drop_down, size: iconSize),
+                  onPressed: () {
+                    _handleMove(gameState.playerPosition.translate(dy: 1));
+                  },
+                ),
               ),
             ],
           ),
@@ -526,6 +576,7 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
   }
+
 
 
   @override
@@ -582,10 +633,10 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
             ),
-            // Отрисовка джойстика под картой
+            buildActionButtons(), // Add action buttons above the joystick
             buildJoystick(),
-            // Статус-бар
             buildStatusBar(),
+
           ],
         ),
       ),
