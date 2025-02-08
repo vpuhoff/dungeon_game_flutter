@@ -42,9 +42,9 @@ class _GameScreenState extends State<GameScreen> {
             children: [
               Text('Your Gold: ${gameState.gold}'),
               const SizedBox(height: 16),
-              ListTile(
+                ListTile(
                 title: const Text('Increase Max HP (+20)'),
-                subtitle: const Text('Cost: 100 gold'),
+                subtitle: Text('Cost: ${100 + (gameState.hpUpgradesPurchased * 50)} gold'),
                 trailing: ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -59,23 +59,23 @@ class _GameScreenState extends State<GameScreen> {
                   child: const Text('Buy'),
                 ),
               ),
-              ListTile(
-                title: const Text('Armor Upgrade (+5% damage reduction)'),
-                subtitle: const Text('Cost: 150 gold'),
+                ListTile(
+                title: Text('Armor Upgrade (${(5.0 - (gameState.armor * 0.5)).toStringAsFixed(1)}% damage reduction)'),
+                subtitle: Text('Cost: ${150 + (gameState.armor * 100)} gold'),
                 trailing: ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      if (gameState.buyArmorUpgrade(150)) {
-                        setDialogState(() {}); // Обновляем состояние диалога
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Armor upgraded!')),
-                        );
-                      }
-                    });
+                  setState(() {
+                    if (gameState.buyArmorUpgrade(150)) {
+                    setDialogState(() {}); // Обновляем состояние диалога
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Armor upgraded!')),
+                    );
+                    }
+                  });
                   },
                   child: const Text('Buy'),
                 ),
-              ),
+                ),
               ListTile(
                 title: const Text('Healing Potion (+50 HP)'),
                 subtitle: const Text('Cost: 50 gold'),

@@ -10,6 +10,7 @@ class GameState {
   int healingPotions = 0;
   int gold = 0;
   int totalSteps = 0;
+  int hpUpgradesPurchased = 0; // Счетчик покупок улучшения здоровья
   Position playerPosition = const Position(1, 1);
   Position exit = const Position(13, 13);  // boardSize - 2
   List<Position> walls = [];
@@ -19,19 +20,24 @@ class GameState {
 
   static const int boardSize = 15;
 
-  bool buyMaxHpUpgrade(int cost) {
-    if (gold >= cost) {
-      gold -= cost;
+  bool buyMaxHpUpgrade(int baseCost) {
+    // Увеличиваем стоимость на 50 золота за каждое предыдущее улучшение
+    int actualCost = baseCost + (hpUpgradesPurchased * 50);
+    if (gold >= actualCost) {
+      gold -= actualCost;
       maxHp += 20;
       hp = maxHp;
+      hpUpgradesPurchased++;
       return true;
     }
     return false;
   }
 
-  bool buyArmorUpgrade(int cost) {
-    if (gold >= cost) {
-      gold -= cost;
+  bool buyArmorUpgrade(int baseCost) {
+    // Увеличиваем стоимость с каждым уровнем брони
+    int actualCost = baseCost + (armor * 100);
+    if (gold >= actualCost) {
+      gold -= actualCost;
       armor += 1;
       return true;
     }
@@ -55,7 +61,16 @@ class GameState {
   }
 
   void takeDamage(int damage) {
-    int reducedDamage = (damage * (1 - (armor * 0.05))).round();
+    // Уменьшаем эффективность брони с каждым уровнем
+    // Начинаем с 5% и уменьшаем на 0.5% с каждым уровнем
+    double totalReduction = 0.0;
+    for (int i = 0; i < armor; i++) {
+      totalReduction += (5.0 - (i * 0.5)) / 100.0;
+    }
+    // Ограничиваем максимальное снижение урона до 75%
+    totalReduction = totalReduction.clamp(0.0, 0.75);
+    
+    int reducedDamage = (damage * (1 - totalReduction)).round();
     hp = (hp - reducedDamage).clamp(0, maxHp);
   }
 
@@ -68,6 +83,7 @@ class GameState {
     healingPotions = 0;
     gold = 0;
     totalSteps = 0;
+    hpUpgradesPurchased = 0; // Сбрасываем счетчик улучшений здоровья
     playerPosition = const Position(1, 1);
     exit = const Position(boardSize - 2, boardSize - 2);
     walls.clear();
@@ -129,7 +145,13 @@ class GameState {
     // Проверка сбора сердца
     final heartIndex = hearts.indexOf(newPosition);
     if (heartIndex != -1) {
-      hp = maxHp; // Полное восстановление
+      if (hp >= maxHp) {
+      // Если здоровье полное, получаем зелье
+      healingPotions++;
+      } else {
+      // Иначе восстанавливаем здоровье
+      hp = maxHp;
+      }
       hearts.removeAt(heartIndex);
     }
 
