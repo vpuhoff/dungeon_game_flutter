@@ -30,15 +30,105 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
+  void _showShop() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Shop'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Your Gold: ${gameState.gold}'),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('Increase Max HP (+20)'),
+                subtitle: const Text('Cost: 100 gold'),
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (gameState.buyMaxHpUpgrade(100)) {
+                        setDialogState(() {}); // Обновляем состояние диалога
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Max HP increased!')),
+                        );
+                      }
+                    });
+                  },
+                  child: const Text('Buy'),
+                ),
+              ),
+              ListTile(
+                title: const Text('Armor Upgrade (+5% damage reduction)'),
+                subtitle: const Text('Cost: 150 gold'),
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (gameState.buyArmorUpgrade(150)) {
+                        setDialogState(() {}); // Обновляем состояние диалога
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Armor upgraded!')),
+                        );
+                      }
+                    });
+                  },
+                  child: const Text('Buy'),
+                ),
+              ),
+              ListTile(
+                title: const Text('Healing Potion (+50 HP)'),
+                subtitle: const Text('Cost: 50 gold'),
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (gameState.buyHealingPotion(50)) {
+                        setDialogState(() {}); // Обновляем состояние диалога
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Healing potion bought!')),
+                        );
+                      }
+                    });
+                  },
+                  child: const Text('Buy'),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  gameState.level++; // Увеличиваем уровень
+                  gameState.generateMaze(); // Генерируем новый уровень
+                  gameState.playerPosition = const Position(1, 1); // Возвращаем игрока на старт
+                });
+              },
+              child: const Text('Continue to next level'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _handleMove(Position newPosition) {
-    // Выполняем движение игрока
-    gameState.movePlayer(newPosition);
-    setState(() {});
-    // Если здоровье игрока стало 0 или меньше, показываем Game Over
-    if (gameState.hp <= 0) {
-      _showGameOver();
+    if (gameState.movePlayer(newPosition)) {
+      setState(() {});
+      
+      if (gameState.hp <= 0) {
+        _showGameOver();
+      } else if (gameState.playerPosition == gameState.exit) {
+        // Показываем магазин при достижении выхода
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showShop();
+        });
+      }
     }
   }
+
+
 
 
   void _showGameOver() {
@@ -195,7 +285,7 @@ class _GameScreenState extends State<GameScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: gameState.hp / 100,
+                    value: gameState.hp / gameState.maxHp,
                     backgroundColor: Colors.grey[300],
                     color: _getHpColor(gameState.hp),
                     minHeight: 10,
@@ -203,7 +293,17 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text('${gameState.hp}%'),
+              Text('${gameState.hp}/${gameState.maxHp}'),
+              if (gameState.healingPotions > 0)
+                IconButton(
+                  icon: const Text('🧪', style: TextStyle(fontSize: 20)),
+                  onPressed: () {
+                    setState(() {
+                      gameState.useHealingPotion();
+                    });
+                  },
+                  tooltip: 'Use Healing Potion',
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -211,7 +311,8 @@ class _GameScreenState extends State<GameScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Text('Gold: ${gameState.gold}'),
-              Text('Steps: ${gameState.totalSteps}'),
+              Text('Armor: ${gameState.armor}'),
+              Text('Potions: ${gameState.healingPotions}'),
               Text(
                 'Rating: ${gameState.calculateRating()}',
                 style: const TextStyle(
@@ -246,7 +347,7 @@ class _GameScreenState extends State<GameScreen> {
               _handleMove(gameState.playerPosition.translate(dy: -1));
             },
           ),
-          // Строка с кнопками "Влево" и "Вправо"
+          // Строка с кнопками "Влево", "Зелье" и "Вправо"
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -256,7 +357,24 @@ class _GameScreenState extends State<GameScreen> {
                   _handleMove(gameState.playerPosition.translate(dx: -1));
                 },
               ),
-              const SizedBox(width: 30),
+              if (gameState.healingPotions > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        gameState.useHealingPotion();
+                      });
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🧪', style: TextStyle(fontSize: 20)),
+                        Text('${gameState.healingPotions}'),
+                      ],
+                    ),
+                  ),
+                ),
               IconButton(
                 icon: const Icon(Icons.arrow_right, size: 40),
                 onPressed: () {

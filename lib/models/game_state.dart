@@ -5,6 +5,9 @@ import 'dart:math';
 class GameState {
   int level = 1;
   int hp = 100;
+  int maxHp = 100;
+  int armor = 0;
+  int healingPotions = 0;
   int gold = 0;
   int totalSteps = 0;
   Position playerPosition = const Position(1, 1);
@@ -16,10 +19,53 @@ class GameState {
 
   static const int boardSize = 15;
 
+  bool buyMaxHpUpgrade(int cost) {
+    if (gold >= cost) {
+      gold -= cost;
+      maxHp += 20;
+      hp = maxHp;
+      return true;
+    }
+    return false;
+  }
+
+  bool buyArmorUpgrade(int cost) {
+    if (gold >= cost) {
+      gold -= cost;
+      armor += 1;
+      return true;
+    }
+    return false;
+  }
+
+  bool buyHealingPotion(int cost) {
+    if (gold >= cost) {
+      gold -= cost;
+      healingPotions += 1;
+      return true;
+    }
+    return false;
+  }
+
+  void useHealingPotion() {
+    if (healingPotions > 0) {
+      healingPotions--;
+      hp = (hp + 50).clamp(0, maxHp);
+    }
+  }
+
+  void takeDamage(int damage) {
+    int reducedDamage = (damage * (1 - (armor * 0.05))).round();
+    hp = (hp - reducedDamage).clamp(0, maxHp);
+  }
+
   // Resets the game state
   void reset() {
     level = 1;
     hp = 100;
+    maxHp = 100;
+    armor = 0;
+    healingPotions = 0;
     gold = 0;
     totalSteps = 0;
     playerPosition = const Position(1, 1);
@@ -75,8 +121,7 @@ class GameState {
     }
 
     if (enemy != null) {
-      hp -= enemy.damage;
-      if (hp < 0) hp = 0;
+      takeDamage(enemy.damage);
       gold += enemy.damage;
       enemy.defeated = true;
     }
@@ -84,7 +129,7 @@ class GameState {
     // Проверка сбора сердца
     final heartIndex = hearts.indexOf(newPosition);
     if (heartIndex != -1) {
-      hp = 100; // Полное восстановление
+      hp = maxHp; // Полное восстановление
       hearts.removeAt(heartIndex);
     }
 
@@ -104,14 +149,8 @@ class GameState {
     // Перемещение игрока
     playerPosition = newPosition;
 
-    // Проверка завершения уровня
-    if (newPosition == exit) {
-      level++;
-      playerPosition = const Position(1, 1);
-      generateMaze();
-    }
-
     return true;
+
   }
 
   // Генерация лабиринта
