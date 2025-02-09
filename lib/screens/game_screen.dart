@@ -24,7 +24,7 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  @override 
+  @override
   void setState(VoidCallback fn) {
     super.setState(fn);
     _requestFocus();
@@ -56,13 +56,11 @@ class _GameScreenState extends State<GameScreen> {
     _requestFocus();
   }
 
-
   @override
   void dispose() {
     _focusNode.dispose();
     super.dispose();
   }
-
 
   void _showShop() {
     _isDialogOpen = true;
@@ -77,40 +75,41 @@ class _GameScreenState extends State<GameScreen> {
             children: [
               Text('Your Gold: ${gameState.gold}'),
               const SizedBox(height: 16),
-                ListTile(
+              ListTile(
                 title: const Text('Increase Max HP (+20)'),
-                subtitle: Text('Cost: ${100 + (gameState.hpUpgradesPurchased * 50)} gold'),
+                subtitle: Text(
+                    'Cost: ${100 + (gameState.hpUpgradesPurchased * 50)} gold'),
                 trailing: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                        if (gameState.buyMaxHpUpgrade(100)) {
+                      if (gameState.buyMaxHpUpgrade(100)) {
                         setDialogState(() {});
                         setState(() {});
                         _showNotification('Max HP increased!');
-                        }
-
+                      }
                     });
                   },
                   child: const Text('Buy'),
                 ),
               ),
-                ListTile(
-                title: Text('Armor Upgrade (${(5.0 - (gameState.armor * 0.5)).toStringAsFixed(1)}% damage reduction)'),
+              ListTile(
+                title: Text(
+                    'Armor Upgrade (${(5.0 - (gameState.armor * 0.5)).toStringAsFixed(1)}% damage reduction)'),
                 subtitle: Text('Cost: ${150 + (gameState.armor * 100)} gold'),
                 trailing: ElevatedButton(
                   onPressed: () {
-                  setState(() {
-                    if (gameState.buyArmorUpgrade(150)) {
-                    setDialogState(() {}); // Обновляем состояние диалога
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Armor upgraded!')),
-                    );
-                    }
-                  });
+                    setState(() {
+                      if (gameState.buyArmorUpgrade(150)) {
+                        setDialogState(() {}); // Обновляем состояние диалога
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Armor upgraded!')),
+                        );
+                      }
+                    });
                   },
                   child: const Text('Buy'),
                 ),
-                ),
+              ),
               ListTile(
                 title: const Text('Healing Potion (+50 HP)'),
                 subtitle: const Text('Cost: 50 gold'),
@@ -120,7 +119,8 @@ class _GameScreenState extends State<GameScreen> {
                       if (gameState.buyHealingPotion(50)) {
                         setDialogState(() {}); // Обновляем состояние диалога
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Healing potion bought!')),
+                          const SnackBar(
+                              content: Text('Healing potion bought!')),
                         );
                       }
                     });
@@ -132,16 +132,16 @@ class _GameScreenState extends State<GameScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () {
+              onPressed: () {
                 Navigator.of(context).pop();
                 setState(() {
-                    gameState.level++;
-                    gameState.generateMaze();
-                    gameState.playerPosition = const Position(1, 1);
-                    _isDialogOpen = false;
-                    _requestFocus();
+                  gameState.level++;
+                  gameState.generateMaze();
+                  gameState.playerPosition = const Position(1, 1);
+                  _isDialogOpen = false;
+                  _requestFocus();
                 });
-                },
+              },
               child: const Text('Continue to next level'),
             ),
           ],
@@ -152,13 +152,13 @@ class _GameScreenState extends State<GameScreen> {
 
   void _handleMove(Position newPosition) {
     if (_isDialogOpen) return;
-    
+
     // Even if move is invalid, request focus
     _requestFocus();
-    
+
     if (gameState.movePlayer(newPosition)) {
       setState(() {});
-      
+
       if (gameState.hp <= 0) {
         _showGameOver();
       } else if (gameState.playerPosition == gameState.exit) {
@@ -166,10 +166,6 @@ class _GameScreenState extends State<GameScreen> {
       }
     }
   }
-
-
-
-
 
   void _showAchievements() {
     showDialog(
@@ -305,12 +301,12 @@ class _GameScreenState extends State<GameScreen> {
         ),
         child: Center(
           child: Text(
-          '${enemy.damage}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
+            '${enemy.damage}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       );
@@ -366,7 +362,8 @@ class _GameScreenState extends State<GameScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: gameState.experience / gameState.experienceToNextLevel,
+                    value:
+                        gameState.experience / gameState.experienceToNextLevel,
                     backgroundColor: Colors.grey[300],
                     color: Colors.purple,
                     minHeight: 8,
@@ -374,7 +371,8 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text('${gameState.experience}/${gameState.experienceToNextLevel} XP'),
+              Text(
+                  '${gameState.experience}/${gameState.experienceToNextLevel} XP'),
             ],
           ),
           const SizedBox(height: 8),
@@ -428,7 +426,6 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-
   Color _getHpColor(int hp) {
     if (hp > 60) return Colors.green;
     if (hp > 30) return Colors.orange;
@@ -461,8 +458,8 @@ class _GameScreenState extends State<GameScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
-                  Icon(Icons.speed, size: 30),
-                  Text('Dash', style: TextStyle(fontSize: 12)),
+                    Icon(Icons.speed, size: 30),
+                    Text('Dash', style: TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -488,7 +485,8 @@ class _GameScreenState extends State<GameScreen> {
                   children: [
                     const Text('🧪', style: TextStyle(fontSize: 24)),
                     // ignore: prefer_const_constructors
-                    Text('${gameState.healingPotions}', style: TextStyle(fontSize: 12)),
+                    Text('${gameState.healingPotions}',
+                        style: TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -525,32 +523,32 @@ class _GameScreenState extends State<GameScreen> {
             ],
           ),
           // Middle row with left and right
-              Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
                 width: buttonSize,
                 height: buttonSize,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_left, size: iconSize),
                   onPressed: () {
-                  _handleMove(gameState.playerPosition.translate(dx: -1));
+                    _handleMove(gameState.playerPosition.translate(dx: -1));
                   },
                 ),
-                ),
-                const SizedBox(width: buttonSize), // Space for middle
-                SizedBox(
+              ),
+              const SizedBox(width: buttonSize), // Space for middle
+              SizedBox(
                 width: buttonSize,
                 height: buttonSize,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_right, size: iconSize),
                   onPressed: () {
-                  _handleMove(gameState.playerPosition.translate(dx: 1));
+                    _handleMove(gameState.playerPosition.translate(dx: 1));
                   },
                 ),
-                ),
-              ],
               ),
+            ],
+          ),
           // Down button row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -577,48 +575,47 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
         title: Text('Floor ${gameState.level}'),
         actions: [
           IconButton(
-          icon: const Icon(Icons.emoji_events),
-          onPressed: _showAchievements,
-          tooltip: 'Достижения',
+            icon: const Icon(Icons.emoji_events),
+            onPressed: _showAchievements,
+            tooltip: 'Достижения',
           ),
         ],
-        ),
-        body: Focus(
+      ),
+      body: Focus(
         autofocus: true,
         onKeyEvent: (FocusNode node, KeyEvent event) {
           if (event is KeyDownEvent) {
-          Position? newPosition;
-          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            newPosition = gameState.playerPosition.translate(dx: -1);
-          } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            newPosition = gameState.playerPosition.translate(dx: 1);
-          } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            newPosition = gameState.playerPosition.translate(dy: -1);
-          } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            newPosition = gameState.playerPosition.translate(dy: 1);
-          }
-          
-          if (newPosition != null) {
-            _handleMove(newPosition);
-            return KeyEventResult.handled;
-          }
+            Position? newPosition;
+            if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+              newPosition = gameState.playerPosition.translate(dx: -1);
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+              newPosition = gameState.playerPosition.translate(dx: 1);
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              newPosition = gameState.playerPosition.translate(dy: -1);
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              newPosition = gameState.playerPosition.translate(dy: 1);
+            }
+
+            if (newPosition != null) {
+              _handleMove(newPosition);
+              return KeyEventResult.handled;
+            }
           }
           return KeyEventResult.ignored;
         },
         child: Column(
           children: [
             Expanded(
-                child: GestureDetector(
-                onTapDown: (_) => _requestFocus(), // Add this line to handle taps
+              child: GestureDetector(
+                onTapDown: (_) =>
+                    _requestFocus(), // Add this line to handle taps
                 child: GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -636,7 +633,6 @@ class _GameScreenState extends State<GameScreen> {
             buildActionButtons(), // Add action buttons above the joystick
             buildJoystick(),
             buildStatusBar(),
-
           ],
         ),
       ),

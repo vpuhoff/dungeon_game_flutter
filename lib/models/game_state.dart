@@ -27,18 +27,18 @@ class GameState {
   int gold = 0;
   int totalSteps = 0;
   int hpUpgradesPurchased = 0;
-  
+
   // Fields for level system
   int playerLevel = 1;
   int experience = 0;
   int experienceToNextLevel = 100;
-  
+
   // Fields for dash ability
   int dashCooldown = 0;
   static const int maxDashCooldown = 5; // Cooldown in turns
   List<Achievement> achievements = [];
   Position playerPosition = const Position(1, 1);
-  Position exit = const Position(13, 13);  // boardSize - 2
+  Position exit = const Position(13, 13); // boardSize - 2
   List<Position> walls = [];
   List<Enemy> enemies = [];
   List<Position> hearts = [];
@@ -85,7 +85,7 @@ class GameState {
       experience -= experienceToNextLevel;
       playerLevel++;
       experienceToNextLevel = (experienceToNextLevel * 1.5).round();
-      
+
       // Level up bonuses
       maxHp += 10;
       hp = maxHp;
@@ -100,13 +100,13 @@ class GameState {
 
     // Dash 2 cells in the specified direction
     Position dashEnd = Position(
-      playerPosition.x + direction.x * 2,
-      playerPosition.y + direction.y * 2
-    );
+        playerPosition.x + direction.x * 2, playerPosition.y + direction.y * 2);
 
     // Check if dash is possible
-    if (dashEnd.x < 0 || dashEnd.x >= boardSize || 
-        dashEnd.y < 0 || dashEnd.y >= boardSize ||
+    if (dashEnd.x < 0 ||
+        dashEnd.x >= boardSize ||
+        dashEnd.y < 0 ||
+        dashEnd.y >= boardSize ||
         walls.contains(dashEnd)) {
       return false;
     }
@@ -202,7 +202,7 @@ class GameState {
     }
     // Ограничиваем максимальное снижение урона до 75%
     totalReduction = totalReduction.clamp(0.0, 0.75);
-    
+
     int reducedDamage = (damage * (1 - totalReduction)).round();
     hp = (hp - reducedDamage).clamp(0, maxHp);
   }
@@ -240,13 +240,13 @@ class GameState {
   // Check if move is valid
   bool isValidMove(Position newPosition) {
     // Check boundaries
-    if (newPosition.x < 0 || 
-        newPosition.x >= boardSize || 
-        newPosition.y < 0 || 
+    if (newPosition.x < 0 ||
+        newPosition.x >= boardSize ||
+        newPosition.y < 0 ||
         newPosition.y >= boardSize) {
       return false;
     }
-    
+
     // Check walls
     return !walls.contains(newPosition);
   }
@@ -260,18 +260,19 @@ class GameState {
         newPosition.y >= boardSize) {
       return false;
     }
-    
+
     // Проверка стен
     if (walls.contains(newPosition)) {
       return false;
     }
-    
+
     totalSteps++;
 
     // Проверка столкновения с врагом
     Enemy? enemy;
     try {
-      enemy = enemies.firstWhere((e) => e.position == newPosition && !e.defeated);
+      enemy =
+          enemies.firstWhere((e) => e.position == newPosition && !e.defeated);
     } catch (e) {
       enemy = null;
     }
@@ -280,7 +281,7 @@ class GameState {
       takeDamage(enemy.damage);
       gold += enemy.damage;
       enemy.defeated = true;
-        gainExperience(enemy.damage * 2); // Experience for defeating enemy
+      gainExperience(enemy.damage * 2); // Experience for defeating enemy
       checkAchievements();
     }
 
@@ -298,7 +299,8 @@ class GameState {
     // Проверка сбора сундука
     Chest? chest;
     try {
-      chest = chests.firstWhere((c) => c.position == newPosition && !c.collected);
+      chest =
+          chests.firstWhere((c) => c.position == newPosition && !c.collected);
     } catch (e) {
       chest = null;
     }
@@ -318,7 +320,6 @@ class GameState {
 
     return true;
   }
-
 
   // Генерация лабиринта
   void generateMaze() {
