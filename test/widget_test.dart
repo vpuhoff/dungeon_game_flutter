@@ -1,30 +1,55 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:dungeon_game/main.dart';
+import 'package:dungeon_game/screens/game_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Game screen initial render test', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: GameScreen()));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the game screen renders with basic UI elements
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Game controls are present', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: GameScreen()));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify joystick controls
+    expect(find.byIcon(Icons.arrow_drop_up), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_drop_down), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_left), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_right), findsOneWidget);
+  });
+
+  testWidgets('Status bar displays game stats', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: GameScreen()));
+
+    // Verify status bar elements
+    expect(find.text('Level 1'), findsOneWidget);
+    expect(find.text('HP: '), findsOneWidget);
+    expect(find.text('Gold: 0'), findsOneWidget);
+    expect(find.text('Armor: 0'), findsOneWidget);
+  });
+
+  testWidgets('Achievements dialog shows up', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: GameScreen()));
+
+    // Tap the achievements button
+    await tester.tap(find.byIcon(Icons.emoji_events));
+    await tester.pumpAndSettle();
+
+    // Verify achievements dialog content
+    expect(find.text('Достижения'), findsOneWidget);
+    expect(find.text('Уровень подземелья'), findsOneWidget);
+    expect(find.text('Собрано золота'), findsOneWidget);
+    expect(find.text('Сделано шагов'), findsOneWidget);
+    expect(find.text('Рейтинг'), findsOneWidget);
+
+    // Close dialog
+    await tester.tap(find.text('Закрыть'));
+    await tester.pumpAndSettle();
+    expect(find.text('Достижения'), findsNothing);
   });
 }
